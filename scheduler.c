@@ -194,17 +194,21 @@ static void gerar_saida(char algo) {
             fprintf(out, "idle for %d units\n", comprimento);
         } else {
             int fim = idx + comprimento;
-            char flag
-            if (completou_em[fim] == tarefa)
-                flag = 'F';
-            else if (perdeu_em[fim] == tarefa)
-                flag = 'L';
-            else if (fim == tempo_total)
-                flag = 'K';
-            else
-                flag = 'H';
-            fprintf(out, "[%s] for %d units - %c\n",
-                    tarefas[tarefa].nome, comprimento, flag);
+char flag;
+    if (completou_em[fim] == tarefa) {
+    flag = 'F';
+}   
+else if (perdeu_em[fim] == tarefa) {
+    flag = 'L';
+} 
+else if (fim == tempo_total) {
+    flag = 'K';
+} else {
+    flag = 'H';
+}
+fprintf(out, "[%s] for %d units - %c\n",
+    tarefas[tarefa].nome, comprimento, flag);
+            
         }
         idx += comprimento;
     }
