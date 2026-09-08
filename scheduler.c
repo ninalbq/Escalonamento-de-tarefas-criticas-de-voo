@@ -16,17 +16,17 @@ typedef struct Instancia {
     int indice_tarefa;
     int restante;
     int deadline_abs;
-    struct Instancia *prox; // não usado, reservado
+    struct Instancia *prox;
 } Instancia;
 
 static int tempo_total;
 static int num_tarefas;
 static Tarefa *tarefas;
-static Instancia **ativas; // uma instância ativa por tarefa
+static Instancia **ativas;
 
-static int *executado;     // executado[t] = índice da tarefa que rodou em [t, t+1)
-static int *completou_em;  // completou_em[t] = tarefa que terminou no instante t
-static int *perdeu_em;     // perdeu_em[t] = tarefa que estourou deadline no instante t
+static int *executado;
+static int *completou_em;
+static int *perdeu_em;
 
 static int *perdidas;
 static int *completadas;
@@ -37,13 +37,12 @@ static void erro(const char *msg) {
     exit(EXIT_FAILURE);
 }
 
-// Retorna 1 se a tarefa 'a' tem prioridade sobre 'b' no algoritmo 'algo'
 static int maior_prioridade(int a, int b, char algo) {
-    if (algo == 'R') { // Rate-Monotonic: menor período tem prioridade
+    if (algo == 'R') {
         if (tarefas[a].periodo < tarefas[b].periodo) return 1;
         if (tarefas[a].periodo > tarefas[b].periodo) return 0;
-        return a < b; // desempate pela ordem de declaração
-    } else {           // EDF: menor deadline absoluto tem prioridade
+        return a < b;
+    } else {
         if (ativas[a]->deadline_abs < ativas[b]->deadline_abs) return 1;
         if (ativas[a]->deadline_abs > ativas[b]->deadline_abs) return 0;
         return a < b;
@@ -61,7 +60,6 @@ static void ler_entrada(const char *arquivo) {
     if (sscanf(linha, "%d", &tempo_total) != 1 || tempo_total <= 0)
         erro("tempo total inválido");
 
-    // conta quantas tarefas existem
     int cont = 0;
     long posicao = ftell(fp);
     while (fgets(linha, sizeof(linha), fp)) {
@@ -85,7 +83,6 @@ static void ler_entrada(const char *arquivo) {
     completadas = calloc(num_tarefas, sizeof(int));
     mortas = calloc(num_tarefas, sizeof(int));
 
-    // volta ao início das tarefas e carrega os dados
     fseek(fp, posicao, SEEK_SET);
     int i = 0;
     while (fgets(linha, sizeof(linha), fp)) {
@@ -114,7 +111,6 @@ static void simular(char algo) {
     }
 
     for (int t = 0; t < tempo_total; t++) {
-        // 1. Trata deadlines que vencem exatamente em t
         for (int i = 0; i < num_tarefas; i++) {
             if (ativas[i] != NULL && ativas[i]->deadline_abs == t) {
                 perdeu_em[t] = i;
@@ -124,11 +120,9 @@ static void simular(char algo) {
             }
         }
 
-        // 2. Chegada de novas instâncias
         for (int i = 0; i < num_tarefas; i++) {
             if (t % tarefas[i].periodo == 0) {
                 if (ativas[i] != NULL) {
-                    // Se já havia uma ativa (não deveria ocorrer com D ≤ P), mata a antiga
                     mortas[i]++;
                     free(ativas[i]);
                     ativas[i] = NULL;
@@ -142,7 +136,6 @@ static void simular(char algo) {
             }
         }
 
-        // 3. Escolhe a tarefa de maior prioridade
         int atual = -1;
         for (int i = 0; i < num_tarefas; i++) {
             if (ativas[i] == NULL) continue;
@@ -150,7 +143,6 @@ static void simular(char algo) {
                 atual = i;
         }
 
-        // 4. Executa uma unidade de tempo
         if (atual != -1) {
             executado[t] = atual;
             ativas[atual]->restante--;
@@ -163,7 +155,6 @@ static void simular(char algo) {
         }
     }
 
-    // Verifica deadlines que vencem exatamente no fim da simulação
     for (int i = 0; i < num_tarefas; i++) {
         if (ativas[i] != NULL && ativas[i]->deadline_abs == tempo_total) {
             perdeu_em[tempo_total] = i;
@@ -173,7 +164,6 @@ static void simular(char algo) {
         }
     }
 
-    // Instâncias ainda ativas são "mortas" pelo fim da simulação
     for (int i = 0; i < num_tarefas; i++) {
         if (ativas[i] != NULL) {
             mortas[i]++;
@@ -181,4 +171,87 @@ static void simular(char algo) {
             ativas[i] = NULL;
         }
     }
+}
+
+static void gerar_saida(char algo) {
+    char nome_arquivo[128];
+    snprintf(nome_arquivo, sizeof(nome_arquivo), "%s_%s.out",
+             (algo == 'R') ? "rate" : "edf", LOGIN);
+
+    FILE *out = fopen(nome_arquivo, "w");
+    if (!out) erro("não foi possível criar arquivo de saída");
+
+    fprintf(out, "EXECUTION BY %s\n", (algo == 'R') ? "RATE" : "EDF");
+
+    int idx = 0;
+    while (idx < tempo_total) {
+        int tarefa = executado[idx];
+        int comprimento = 1;
+        while (idx + comprimento < tempo_total && executado[idx + comprimento] == tarefa)
+            comprimento++;
+
+        if (tarefa == -1) {
+            fprintf(out, "idle for %d units\n", comprimento);
+        } else {
+            int fim = idx + comprimento;
+            char flag
+            if (completou_em[fim] == tarefa)
+                flag = 'F';
+            else if (perdeu_em[fim] == tarefa)
+                flag = 'L';
+            else if (fim == tempo_total)
+                flag = 'K';
+            else
+                flag = 'H';
+            fprintf(out, "[%s] for %d units - %c\n",
+                    tarefas[tarefa].nome, comprimento, flag);
+        }
+        idx += comprimento;
+    }
+
+    fprintf(out, "\nLOST DEADLINES\n");
+    for (int i = 0; i < num_tarefas; i++)
+        fprintf(out, "[%s] %d\n", tarefas[i].nome, perdidas[i]);
+
+    fprintf(out, "\nCOMPLETE EXECUTION\n");
+    for (int i = 0; i < num_tarefas; i++)
+        fprintf(out, "[%s] %d\n", tarefas[i].nome, completadas[i]);
+
+    fprintf(out, "\nKILLED\n");
+    for (int i = 0; i < num_tarefas; i++)
+        fprintf(out, "[%s] %d\n", tarefas[i].nome, mortas[i]);
+
+    fclose(out);
+}
+
+int main(int argc, char **argv) {
+    if (argc != 3) {
+        fprintf(stderr, "Uso: %s <rate|edf> <arquivo>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    char algo;
+    if (strcmp(argv[1], "rate") == 0)
+        algo = 'R';
+    else if (strcmp(argv[1], "edf") == 0)
+        algo = 'E';
+    else {
+        fprintf(stderr, "Erro: primeiro argumento deve ser 'rate' ou 'edf'\n");
+        return EXIT_FAILURE;
+    }
+
+    ler_entrada(argv[2]);
+    simular(algo);
+    gerar_saida(algo);
+
+    free(tarefas);
+    free(ativas);
+    free(executado);
+    free(completou_em);
+    free(perdeu_em);
+    free(perdidas);
+    free(completadas);
+    free(mortas);
+
+    return EXIT_SUCCESS;
 }
