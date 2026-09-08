@@ -9,9 +9,11 @@ Simulador de escalonamento preemptivo para tarefas periódicas com deadlines men
 
 ```bash
 gcc -o scheduler scheduler.c
+ 
+``` 
+#execucao
 
-Execução
-  ./scheduler rate voo.txt ou ./scheduler rate voo2.txt ou como preferir
+./scheduler rate voo.txt ou ./scheduler rate voo2.txt ou como preferir
 
   Gera o arquivo de saída rate_ncao2.out ou edf_ncao2.out
 
