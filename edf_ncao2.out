@@ -1,25 +1,40 @@
 EXECUTION BY EDF
-[ATT] for 8 units - F
-[NAV] for 15 units - F
-[ATT] for 8 units - F
-idle for 9 units
-[ATT] for 8 units - F
-idle for 2 units
-[NAV] for 10 units - H
-[ATT] for 8 units - F
-[NAV] for 5 units - F
-idle for 7 units
-[ATT] for 8 units - F
-idle for 12 units
+[SENSOR] for 4 units - F
+[CONTROLE] for 6 units - H
+[SENSOR] for 4 units - F
+[CONTROLE] for 4 units - F
+[NAVEG] for 2 units - H
+[SENSOR] for 4 units - F
+[NAVEG] for 6 units - L
+[SENSOR] for 4 units - F
+[CONTROLE] for 10 units - F
+[SENSOR] for 4 units - F
+[NAVEG] for 2 units - H
+[SENSOR] for 4 units - F
+[CONTROLE] for 6 units - H
+[SENSOR] for 4 units - F
+[CONTROLE] for 4 units - F
+[NAVEG] for 2 units - L
+[SENSOR] for 4 units - F
+idle for 1 units
+[CONTROLE] for 5 units - H
+[SENSOR] for 4 units - F
+[CONTROLE] for 5 units - F
+[NAVEG] for 1 units - H
+[SENSOR] for 4 units - F
+[NAVEG] for 6 units - K
 
 LOST DEADLINES
-[ATT] 0
-[NAV] 0
+[SENSOR] 0
+[CONTROLE] 0
+[NAVEG] 2
 
 COMPLETE EXECUTION
-[ATT] 5
-[NAV] 2
+[SENSOR] 10
+[CONTROLE] 4
+[NAVEG] 0
 
 KILLED
-[ATT] 0
-[NAV] 0
+[SENSOR] 0
+[CONTROLE] 0
+[NAVEG] 1
